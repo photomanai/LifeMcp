@@ -2,12 +2,12 @@ import { Client } from "@notionhq/client";
 
 export const definition = {
   name: "notion_add_note",
-  description: "Belirlediğin Notion veritabanına yeni bir not (sayfa) ekler.",
+  description: "Adds a new note (page) to your specified Notion database.",
   inputSchema: {
     type: "object",
     properties: {
-      title: { type: "string", description: "Not başlığı" },
-      content: { type: "string", description: "Not içeriği" },
+      title: { type: "string", description: "Note title" },
+      content: { type: "string", description: "Note content" },
     },
     required: ["title", "content"],
   },
@@ -18,7 +18,7 @@ export async function handler(args) {
 
   if (!NOTION_API_KEY || !NOTION_DATABASE_ID) {
     throw new Error(
-      "Notion yapılandırılmamış. .env dosyasına NOTION_API_KEY ve NOTION_DATABASE_ID eklemelisin."
+      "Notion not configured. Add NOTION_API_KEY and NOTION_DATABASE_ID to .env."
     );
   }
 
@@ -27,7 +27,7 @@ export async function handler(args) {
   const response = await notion.pages.create({
     parent: { database_id: NOTION_DATABASE_ID },
     properties: {
-      // Notion veritabanındaki başlık kolonunun adı "Name" değilse burayı güncelle
+      // Update if the title column name in your Notion database is not "Name"
       Name: { title: [{ text: { content: args.title } }] },
     },
     children: [

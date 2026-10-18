@@ -3,14 +3,14 @@ import * as cheerio from "cheerio";
 export const definition = {
   name: "web_search",
   description:
-    "DuckDuckGo üzerinden ücretsiz web araması yapar (API key gerekmez). Başlık, kısa açıklama ve URL döner.",
+    "Free web search via DuckDuckGo (no API key required). Returns title, short description and URL.",
   inputSchema: {
     type: "object",
     properties: {
       query: { type: "string", description: "Arama sorgusu" },
       max_results: {
         type: "number",
-        description: "Maksimum sonuç sayısı (varsayılan 5, üst limit 10)",
+        description: "Maximum number of results (default 5, max limit 10)",
       },
     },
     required: ["query"],
@@ -30,7 +30,7 @@ export async function handler(args) {
   });
 
   if (!res.ok) {
-    throw new Error(`DuckDuckGo isteği başarısız: HTTP ${res.status}`);
+    throw new Error(`DuckDuckGo request failed: HTTP ${res.status}`);
   }
 
   const html = await res.text();
@@ -44,7 +44,7 @@ export async function handler(args) {
     const title = titleEl.text().trim();
     let link = titleEl.attr("href") || "";
 
-    // DuckDuckGo yönlendirme linkini gerçek URL'e çevir
+    // Convert DuckDuckGo redirect link to real URL
     const match = link.match(/uddg=([^&]+)/);
     if (match) link = decodeURIComponent(match[1]);
 
@@ -61,7 +61,7 @@ export async function handler(args) {
         type: "text",
         text: results.length
           ? JSON.stringify(results, null, 2)
-          : "Sonuç bulunamadı.",
+          : "No results found.",
       },
     ],
   };

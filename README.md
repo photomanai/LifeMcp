@@ -1,99 +1,81 @@
 # Life MCP Server
 
-Kişisel asistan MCP sunucusu. OpenCode (ya da herhangi bir MCP client) `/mcp` uç noktasına
-`Authorization: Bearer <MCP_API_KEY>` header'ı ile bağlanır.
+Personal assistant MCP server. OpenCode (or any MCP client) connects to the `/mcp` endpoint with `Authorization: Bearer <MCP_API_KEY>` header.
 
-## Mevcut araçlar
+## Available tools
 
-| Araç | Ne yapar | Gerekli servis |
+| Tool | What it does | Required service |
 |---|---|---|
-| `web_search` | DuckDuckGo üzerinden ücretsiz web araması (API key gerekmez) | — |
-| `gmail_send` | Gmail'den e-posta gönderir | Gmail App Password |
-| `gmail_read` | Gmail gelen kutusundan liste + UID getirir | Gmail App Password |
-| `gmail_get_message` | Bir mesajın tam içeriğini (gövde metni) UID ile okur | Gmail App Password |
-| `telegram_send` | Telegram botu ile mesaj gönderir | Telegram Bot |
-| `notion_add_note` | Notion veritabanına not ekler | Notion Integration |
+| `web_search` | Free web search via DuckDuckGo (no API key required) | — |
+| `gmail_send` | Sends email from Gmail | Gmail App Password |
+| `gmail_read` | Lists emails from Gmail inbox + returns UID | Gmail App Password |
+| `gmail_get_message` | Reads full content (body text) of a message via UID | Gmail App Password |
+| `telegram_send` | Sends message via Telegram bot | Telegram Bot |
+| `notion_add_note` | Adds a note to Notion database | Notion Integration |
 
-Yeni bir servis eklemek için `tools/` altına yeni bir dosya oluşturup `tools/index.js`
-içindeki listeye eklemen yeterli — mimari bunun için modüler tasarlandı.
+To add a new service, create a new file in `tools/` and add it to the list in `tools/index.js` — the architecture is designed for this.
 
-## 1) Kurulum
+## 1) Installation
 
 ```bash
 npm install
 cp .env.example .env
 ```
 
-`.env` içindeki `MCP_API_KEY` alanına kendi belirleyeceğin güçlü, rastgele bir değer yaz.
-Bu değeri MCP client tarafında (OpenCode config'inde) `Authorization: Bearer ...` olarak kullanacaksın.
+Write a strong, random value in the `MCP_API_KEY` field in `.env`. You'll use this value on the MCP client side (in OpenCode config) as `Authorization: Bearer ...`.
 
-## 2) Gmail bağlantısı — App Password (opsiyonel, kullanmayacaksan atla)
+## 2) Gmail connection — App Password (optional, skip if you won't use it)
 
-App Password yöntemi OAuth'a göre çok daha basit: Google Cloud projesi gerekmez,
-sadece hesabında 2 Adımlı Doğrulama (2FA) açık olması yeterli.
+The App Password method is much simpler than OAuth: no Google Cloud project is needed, just having 2FA (Two-Factor Authentication) enabled in your account is enough.
 
-1. https://myaccount.google.com/security adresine git, **2 Adımlı Doğrulama**'yı
-   aç (kapalıysa App Password oluşturamazsın).
-2. https://myaccount.google.com/apppasswords adresine git.
-3. Bir isim yaz (örn. "life-mcp"), **Oluştur**'a bas.
-4. Sana 16 haneli boşluksuz bir şifre verecek (örn. `abcdabcdabcdabcd`) — bunu kopyala.
-5. `.env` dosyasına şunları yaz:
+1. Go to https://myaccount.google.com/security, enable **2-Step Verification** (2FA) (you can't create App Passwords if 2FA is disabled).
+2. Go to https://myaccount.google.com/apppasswords.
+3. Enter a name (e.g., "life-mcp"), click **Create**.
+4. You'll receive a 16-character password without spaces (e.g., `abcdabcdabcdabcd`) — copy it.
+5. Write the following in the `.env` file:
 
    ```
    GMAIL_USER=kendi.mailin@gmail.com
    GMAIL_APP_PASSWORD=abcdabcdabcdabcd
    ```
 
-Bu App Password normal Gmail şifrenden farklıdır, sadece bu uygulamaya özeldir ve
-istediğin zaman aynı sayfadan iptal edebilirsin. `gmail_send` SMTP (`smtp.gmail.com:465`),
-`gmail_read` ise IMAP (`imap.gmail.com:993`) üzerinden bu bilgilerle bağlanır.
+This App Password is different from your normal Gmail password; it's unique to this application and can be revoked anytime from the same page. `gmail_send` uses SMTP (`smtp.gmail.com:465`), and `gmail_read` uses IMAP (`imap.gmail.com:993`) with these credentials.
 
-> Not: Google Workspace (kurumsal) hesaplarında yönetici App Password'leri kapatmış
-> olabilir — öyle bir durumda IT yöneticinle konuşman gerekir.
+> Note: Google Workspace (corporate) accounts may have App Passwords disabled by the administrator — in such a case, you need to talk to your IT admin.
 
-## 3) Telegram bağlantısı (opsiyonel)
+## 3) Telegram connection (optional)
 
-1. Telegram'da **@BotFather**'a `/newbot` yaz, bir bot oluştur, sana verdiği token'ı
-   `.env` içine `TELEGRAM_BOT_TOKEN` olarak yaz.
-2. Botuna Telegram'dan bir mesaj at (bot ilk mesajı sen atmadan sana yazamaz).
-3. Şu adrese git ve `chat.id` değerini bul:
-   `https://api.telegram.org/bot<TOKEN>/getUpdates`
-4. Bulduğun ID'yi `.env` içine `TELEGRAM_CHAT_ID` olarak yaz.
+1. In Telegram, message **@BotFather** with `/newbot`, create a bot, and write the token you receive to `.env` as `TELEGRAM_BOT_TOKEN`.
+2. Send a message to the bot from Telegram (the bot won't send you messages until you send one first).
+3. Go to this address and find the `chat.id` value: `https://api.telegram.org/bot<TOKEN>/getUpdates`
+4. Write the found ID to `.env` as `TELEGRAM_CHAT_ID`.
 
-## 4) Notion bağlantısı (opsiyonel)
+## 4) Notion connection (optional)
 
-1. https://www.notion.so/my-integrations adresinden yeni bir **Internal Integration**
-   oluştur, verilen "Internal Integration Secret" değerini `.env` içine `NOTION_API_KEY`
-   olarak yaz.
-2. Notlarını tutmak istediğin bir Notion veritabanı (database) oluştur ve sağ üstteki
-   "..." menüsünden **Connections** kısmına yeni integration'ını ekle (bu adım şart,
-   yoksa "unauthorized" hatası alırsın).
-3. Veritabanının URL'sindeki 32 karakterlik ID'yi `.env` içine `NOTION_DATABASE_ID`
-   olarak yaz.
-4. Veritabanının başlık kolonunun adı "Name" değilse `tools/notion.js` içindeki
-   `Name:` alanını kendi kolon adınla değiştir.
+1. From https://www.notion.so/my-integrations, create a new **Internal Integration**, and write the given "Internal Integration Secret" value to `.env` as `NOTION_API_KEY`.
+2. Create a Notion database (to keep your notes) and, from the "..." menu at the top right, add your new integration under **Connections** (this step is mandatory, otherwise you'll get an "unauthorized" error).
+3. Write the 32-character ID from the Notion database URL to `.env` as `NOTION_DATABASE_ID`.
+4. If the title column of the database is not named "Name", change the `Name:` field in `tools/notion.js` to your column name.
 
-## 5) Çalıştırma
+## 5) Running
 
 ```bash
 npm start
 ```
 
-Sunucu `http://0.0.0.0:9898/mcp` adresinde ayağa kalkar.
+The server starts at `http://0.0.0.0:9898/mcp`.
 
-## 6) OpenCode / MCP client tarafında bağlanma
+## 6) Connecting from OpenCode / MCP client side
 
-Client config'inde uç nokta olarak `http://<sunucu-ip>:9898/mcp` ver, header olarak:
+In the client config, set the endpoint as `http://<server-ip>:9898/mcp`, and use the header:
 
 ```
 Authorization: Bearer <MCP_API_KEY>
 ```
 
-## Güvenlik notları
+## Security notes
 
-- `.env` dosyanı asla paylaşma veya git'e commit etme (`.gitignore` içinde zaten hariç tutuldu).
-- `MCP_API_KEY` olmadan hiçbir istek kabul edilmez.
-- Sunucuyu genel internete açacaksan (0.0.0.0) mutlaka bir reverse proxy (nginx/caddy) arkasında
-  HTTPS ile çalıştır ve mümkünse IP kısıtlaması da ekle — şu an sadece Bearer token koruması var.
-- Her yeni entegrasyon (Gmail, Telegram, Notion vb.) sadece kendi izin verdiğin hesaplara
-  bağlanır; token'lar `.env` dosyasında senin makinende tutulur, hiçbir yere gönderilmez.
+- Never share or commit the `.env` file (it's already excluded via `.gitignore`).
+- No requests are accepted without `MCP_API_KEY`.
+- If you'll open the server to the general internet (0.0.0.0), definitely run it behind a reverse proxy (nginx/caddy) with HTTPS, and consider adding IP restrictions — currently only Bearer token protection is in place.
+- Each new integration (Gmail, Telegram, Notion, etc.) only connects to the accounts it's authorized for; the tokens are stored in your machine's `.env` file and are never sent anywhere.

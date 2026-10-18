@@ -1,7 +1,7 @@
 {
   "name": "life-mcp-server",
   "version": "1.0.0",
-  "description": "Kişisel MCP sunucusu - web arama, Gmail, Telegram, WhatsApp, Tarayıcı, Notion entegrasyonlu",
+  "description": "Personal MCP server - web search, Gmail, Telegram, WhatsApp, Browser, Notion integrations",
   "type": "module",
   "main": "server.js",
   "scripts": {

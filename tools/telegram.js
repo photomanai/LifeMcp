@@ -1,10 +1,10 @@
 export const definition = {
   name: "telegram_send",
-  description: "Telegram botu üzerinden sana mesaj gönderir.",
+  description: "Sends a message via Telegram bot.",
   inputSchema: {
     type: "object",
     properties: {
-      message: { type: "string", description: "Gönderilecek mesaj metni" },
+      message: { type: "string", description: "Message text to send" },
     },
     required: ["message"],
   },
@@ -15,7 +15,7 @@ export async function handler(args) {
 
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
     throw new Error(
-      "Telegram yapılandırılmamış. .env dosyasına TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID eklemelisin."
+      "Telegram not configured. Add TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID to .env."
     );
   }
 
@@ -28,8 +28,8 @@ export async function handler(args) {
 
   const data = await res.json();
   if (!data.ok) {
-    throw new Error(`Telegram API hatası: ${data.description}`);
+    throw new Error(`Telegram API error: ${data.description}`);
   }
 
-  return { content: [{ type: "text", text: "Telegram mesajı gönderildi." }] };
+  return { content: [{ type: "text", text: "Telegram message sent." }] };
 }

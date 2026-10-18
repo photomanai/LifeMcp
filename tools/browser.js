@@ -3,14 +3,14 @@ import open from "open";
 export const definition = {
   name: "open_website",
   description:
-    "Bilgisayarda varsayılan tarayıcı ile bir web sitesi açar. URL'yi doğrudan veya arama motoru üzerinden açabilir.",
+    "Opens a website in the default browser. Opens URL directly or via search engine.",
   inputSchema: {
     type: "object",
     properties: {
       url: {
         type: "string",
         description:
-          "Açılacak URL veya arama sorgusu (örn: 'youtube.com', 'https://google.com', 'nodejs tutorial')",
+          "URL or search query to open (e.g., 'youtube.com', 'https://google.com', 'nodejs tutorial')",
       },
     },
     required: ["url"],
@@ -41,11 +41,11 @@ export async function handler(args) {
       content: [
         {
           type: "text",
-          text: `Tarayıcıda açıldı: ${url}`,
+          text: "Opened in browser: ${url}",
         },
       ],
     };
   } catch (err) {
-    throw new Error(`Tarayıcı açılamadı: ${err.message}`);
+    throw new Error(`Could not open browser: ${err.message}`);
   }
 }

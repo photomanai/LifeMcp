@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 9898;
 const API_KEY = process.env.MCP_API_KEY;
 
 if (!API_KEY) {
-  console.error("[!] HATA: .env dosyasında MCP_API_KEY tanımlı değil. Sunucu başlatılamıyor.");
+  console.error("[!] ERROR: MCP_API_KEY not defined in .env file. Server cannot start.");
   process.exit(1);
 }
 
@@ -39,7 +39,7 @@ function getServer() {
     if (!tool) {
       return {
         isError: true,
-        content: [{ type: "text", text: `Bilinmeyen araç: ${name}` }],
+        content: [{ type: "text", text: `Unknown tool: ${name}` }],
       };
     }
 
@@ -66,7 +66,7 @@ app.use(express.json());
 function checkAuth(req, res) {
   const authHeader = req.headers.authorization;
   if (!authHeader || authHeader !== `Bearer ${API_KEY}`) {
-    console.warn(`[!] Yetkisiz erişim denemesi: ${req.ip}`);
+    console.warn(`[!] Unauthorized access attempt: ${req.ip}`);
     res.status(401).json({ error: "Unauthorized" });
     return false;
   }
@@ -74,7 +74,7 @@ function checkAuth(req, res) {
 }
 
 // ==========================================
-// 3. STREAMABLE HTTP TRANSPORT (session bazlı)
+// 3. STREAMABLE HTTP TRANSPORT (session-based)
 // ==========================================
 const transports = {};
 
@@ -98,7 +98,7 @@ app.post("/mcp", async (req, res) => {
     transport.onclose = () => {
       if (transport.sessionId) {
         delete transports[transport.sessionId];
-        console.log(`[-] Oturum kapandı: ${transport.sessionId}`);
+        console.log(`[-] Session closed: ${transport.sessionId}`);
       }
     };
 
@@ -107,7 +107,7 @@ app.post("/mcp", async (req, res) => {
   } else {
     res.status(400).json({
       jsonrpc: "2.0",
-      error: { code: -32000, message: "Geçersiz oturum ya da eksik initialize isteği." },
+      error: { code: -32000, message: "Invalid session or missing initialize request." },
       id: null,
     });
     return;
@@ -120,7 +120,7 @@ app.get("/mcp", async (req, res) => {
   if (!checkAuth(req, res)) return;
   const sessionId = req.headers["mcp-session-id"];
   if (!sessionId || !transports[sessionId]) {
-    res.status(400).send("Geçersiz ya da eksik oturum ID'si");
+    res.status(400).send("Invalid or missing session ID");
     return;
   }
   await transports[sessionId].handleRequest(req, res);
@@ -130,7 +130,7 @@ app.delete("/mcp", async (req, res) => {
   if (!checkAuth(req, res)) return;
   const sessionId = req.headers["mcp-session-id"];
   if (!sessionId || !transports[sessionId]) {
-    res.status(400).send("Geçersiz ya da eksik oturum ID'si");
+    res.status(400).send("Invalid or missing session ID");
     return;
   }
   await transports[sessionId].handleRequest(req, res);
@@ -138,7 +138,7 @@ app.delete("/mcp", async (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[+] Life MCP Server ${PORT} portunda çalışıyor.`);
+  console.log(`[+] Life MCP Server running on port ${PORT}.`);
   console.log(`[+] Endpoint: http://0.0.0.0:${PORT}/mcp`);
-  console.log(`[+] Aktif araçlar: ${tools.map((t) => t.definition.name).join(", ")}`);
+  console.log(`[+] Active tools: ${tools.map((t) => t.definition.name).join(", ")}`);
 });

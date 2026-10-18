@@ -6,22 +6,22 @@ function getEnv() {
   const { GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
     throw new Error(
-      "Gmail yapılandırılmamış. .env dosyasına GMAIL_USER ve GMAIL_APP_PASSWORD eklemelisin (bkz. README)."
+      "Gmail not configured. Add GMAIL_USER and GMAIL_APP_PASSWORD to .env (see README)."
     );
   }
   return { GMAIL_USER, GMAIL_APP_PASSWORD };
 }
 
-// -------- Gönderme (SMTP + App Password) --------
+// -------- Sending (SMTP + App Password) --------
 export const sendDefinition = {
   name: "gmail_send",
-  description: "Gmail hesabından App Password kullanarak (SMTP üzerinden) e-posta gönderir.",
+  description: "Sends email from Gmail using App Password (via SMTP).",
   inputSchema: {
     type: "object",
     properties: {
-      to: { type: "string", description: "Alıcı e-posta adresi" },
+      to: { type: "string", description: "Recipient email address" },
       subject: { type: "string", description: "Konu" },
-      body: { type: "string", description: "Düz metin e-posta içeriği" },
+      body: { type: "string", description: "Plain text email content" },
     },
     required: ["to", "subject", "body"],
   },
@@ -46,19 +46,19 @@ export async function sendHandler(args) {
   });
 
   return {
-    content: [{ type: "text", text: `E-posta gönderildi. Message ID: ${info.messageId}` }],
+    content: [{ type: "text", text: `Email sent. Message ID: ${info.messageId}` }],
   };
 }
 
-// -------- Okuma (IMAP + App Password) --------
+// -------- Reading (IMAP + App Password) --------
 export const readDefinition = {
   name: "gmail_read",
-  description: "Gmail gelen kutusundan (INBOX) son e-postaları okur.",
+  description: "Reads recent emails from Gmail inbox (INBOX).",
   inputSchema: {
     type: "object",
     properties: {
-      max_results: { type: "number", description: "Kaç e-posta getirileceği (varsayılan 5)" },
-      unread_only: { type: "boolean", description: "Sadece okunmamışları getir (varsayılan false)" },
+      max_results: { type: "number", description: "Number of emails to retrieve (default 5)" },
+      unread_only: { type: "boolean", description: "Only retrieve unread (default false)" },
     },
   },
 };
@@ -82,11 +82,11 @@ export async function readHandler(args) {
   try {
     const lock = await client.getMailboxLock("INBOX");
     try {
-      // En yeni mesajlardan başlamak için mailbox boyutunu al
+      // Get mailbox size to start from newest messages
       const total = client.mailbox.exists;
-      if (total === 0) return { content: [{ type: "text", text: "Gelen kutusu boş." }] };
+      if (total === 0) return { content: [{ type: "text", text: "Inbox is empty." }] };
 
-      const start = Math.max(1, total - limit * 3 + 1); // biraz fazla çek, unread filtrelenince eksik kalmasın
+      const start = Math.max(1, total - limit * 3 + 1); // fetch a bit more, so unread filter doesn't miss any
       const range = `${start}:${total}`;
 
       for await (const msg of client.fetch(range, { envelope: true, flags: true, uid: true, source: false })) {
@@ -114,21 +114,21 @@ export async function readHandler(args) {
     content: [
       {
         type: "text",
-        text: sorted.length ? JSON.stringify(sorted, null, 2) : "Hiç e-posta bulunamadı.",
+        text: sorted.length ? JSON.stringify(sorted, null, 2) : "No emails found.",
       },
     ],
   };
 }
 
-// -------- Tek bir mesajın tam içeriğini okuma --------
+// -------- Reading a single message's full content --------
 export const getMessageDefinition = {
   name: "gmail_get_message",
   description:
-    "Belirli bir e-postanın tam içeriğini (gövde metni dahil) okur. Önce gmail_read ile mesajın 'uid' değerini al, sonra bu araca ver.",
+    "Reads full content (including body text) of a message. First get the message 'uid' via gmail_read, then pass it to this tool.",
   inputSchema: {
     type: "object",
     properties: {
-      uid: { type: "number", description: "gmail_read çıktısındaki 'uid' değeri" },
+      uid: { type: "number", description: "UID from gmail_read output" },
     },
     required: ["uid"],
   },
@@ -154,7 +154,7 @@ export async function getMessageHandler(args) {
     try {
       const msg = await client.fetchOne(uid, { source: true, uid: true });
       if (!msg || !msg.source) {
-        return { content: [{ type: "text", text: `UID ${uid} için mesaj bulunamadı.` }] };
+        return { content: [{ type: "text", text: "Message not found for UID ${uid}." }] };
       }
 
       const parsed = await simpleParser(msg.source);
@@ -163,7 +163,7 @@ export async function getMessageHandler(args) {
         to: parsed.to?.text || "",
         subject: parsed.subject || "(konu yok)",
         date: parsed.date,
-        text: parsed.text || parsed.html?.replace(/<[^>]+>/g, " ").trim() || "(içerik boş)",
+        text: parsed.text || parsed.html?.replace(/<[^>]+>/g, " ").trim() || "(content empty)",
       };
     } finally {
       lock.release();

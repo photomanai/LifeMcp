@@ -39,9 +39,9 @@ async function ensureConnection() {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        console.log("\n📱 WhatsApp QR kodu taratın:\n");
+        console.log("\n📱 WhatsApp QR code scan:\n");
         qrcode.generate(qr, { small: true });
-        console.log("\nQR kodu telefonunuzdan tarayın.\n");
+        console.log("\nScan the QR code with your phone.\n");
       }
 
       if (connection === "close") {
@@ -49,7 +49,7 @@ async function ensureConnection() {
           lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         console.log(
-          `WhatsApp bağlantısı kesildi. Kod: ${statusCode}. Yeniden bağlanılıyor: ${shouldReconnect}`
+          `WhatsApp connection closed. Code: ${statusCode}. Reconnecting: ${shouldReconnect}`
         );
         isLoggedIn = false;
         sock = null;
@@ -60,7 +60,7 @@ async function ensureConnection() {
       }
 
       if (connection === "open") {
-        console.log("✅ WhatsApp bağlantısı başarılı!");
+        console.log("✅ WhatsApp connection successful!");
         isLoggedIn = true;
       }
     });
@@ -74,16 +74,16 @@ async function ensureConnection() {
 export const sendDefinition = {
   name: "whatsapp_send",
   description:
-    "WhatsApp üzerinden bir kişiye veya gruba mesaj gönderir. Telefon numarası uluslararası formatta olmalı (örn: 994xxxxxxxxx).",
+    "Sends a message via WhatsApp. Phone number must be in international format (e.g., 994xxxxxxxxx).",
   inputSchema: {
     type: "object",
     properties: {
       to: {
         type: "string",
         description:
-          "Alıcının telefon numarası (uluslararası, başta + olmadan, ör: 994XXXXXXXXX) veya grup ID'si",
+          "Recipient's phone number (international, without +, e.g., 994XXXXXXXXX) or group ID",
       },
-      message: { type: "string", description: "Gönderilecek mesaj metni" },
+      message: { type: "string", description: "Message text to send" },
     },
     required: ["to", "message"],
   },
@@ -99,7 +99,7 @@ export async function sendHandler(args) {
   const sock = await ensureConnection();
   if (!isLoggedIn) {
     throw new Error(
-      "WhatsApp henüz bağlı değil. Lütfen QR kodunu taratın veya bağlantının açılmasını bekleyin."
+      "WhatsApp not connected. Please scan the QR code or wait for the connection to open."
     );
   }
 
@@ -111,25 +111,26 @@ export async function sendHandler(args) {
       content: [
         {
           type: "text",
-          text: `WhatsApp mesajı gönderildi: ${to}`,
+          text: `WhatsApp message sent: ${to}`,
         },
       ],
     };
   } catch (err) {
-    throw new Error(`WhatsApp mesaj gönderilemedi: ${err.message}`);
+    throw new Error(`WhatsApp message could not be sent: ${err.message}`);
   }
 }
 
 export const readDefinition = {
   name: "whatsapp_read",
   description:
-    "WhatsApp'taki son mesajları okur. En son gelen mesajları listeler.",
+    "Reads the latest messages from WhatsApp. Lists the most recent incoming messages.",
   inputSchema: {
     type: "object",
     properties: {
       max_results: {
         type: "number",
-        description: "Kaç mesaj getirileceği (varsayılan 10)",
+        description:
+      "Number of messages to retrieve (default 10)",
       },
     },
     required: [],
@@ -142,7 +143,7 @@ export async function readHandler(args) {
   const sock = await ensureConnection();
   if (!isLoggedIn) {
     throw new Error(
-      "WhatsApp henüz bağlı değil. Lütfen QR kodunu taratın veya bağlantının açılmasını bekleyin."
+      "WhatsApp not connected. Please scan the QR code or wait for the connection to open."
     );
   }
 
@@ -202,6 +203,6 @@ export async function readHandler(args) {
       ],
     };
   } catch (err) {
-    throw new Error(`WhatsApp mesajları okunamadı: ${err.message}`);
+    throw new Error(`WhatsApp messages could not be read: ${err.message}`);
   }
 }

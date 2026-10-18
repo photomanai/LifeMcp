@@ -5,9 +5,9 @@ import * as notion from "./notion.js";
 import * as browser from "./browser.js";
 import * as whatsapp from "./whatsapp.js";
 
-// Yeni bir araç eklemek için:
-// 1. tools/ altına yeni bir dosya oluştur (definition + handler export et)
-// 2. Aşağıdaki listeye ekle
+// Add a new tool:
+// 1. Create a new file in tools/ (definition + handler export)
+// 2. Add to the following list
 export const tools = [
   { definition: webSearch.definition, handler: webSearch.handler },
   { definition: gmail.sendDefinition, handler: gmail.sendHandler },
